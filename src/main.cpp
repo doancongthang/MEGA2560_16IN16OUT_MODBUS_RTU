@@ -1,11 +1,17 @@
 #include <ModbusRTU.h>
 #include <Arduino.h>
-//#include <SPI.h>
-//#include <Mcp320x.h>
+#include <SPI.h>
+#include <Mcp3208.h>
 
 // Firmware FOR BOARD 16IN_16OUT
 // Using Uart2 for RS_485
 #define REGN 10
+
+// Cai dat cho ADC
+
+MCP3208 adc;
+//MCP3208 adc(ADC_VREF, SPI_CS);
+
 //#define SLAVE_ID 1
 // Define for board 16IN_16OUT
 int input[] = {A8, A9, A10, A11, A12, A13, A14, A15,
@@ -101,33 +107,39 @@ int SetbaurateModbusRTU()
     }
     return ModbusBaurate;
 }
-
-void setup()
+void updateSensor()
 {
-    // pinMode(SS, OUTPUT);
-    // pinMode(MOSI, OUTPUT);
-    // pinMode(MISO, INPUT);
-    // pinMode(SCK, OUTPUT);
-    // adc.begin(SS, MOSI, MISO, SCK);
+    static unsigned long timeSampling = 0;
+    int val1 = adc.readADC(0);
+    int val2 = adc.readADC(1);
+    int val3 = adc.readADC(2);
+    int val4 = adc.readADC(3);
 
-    // configure PIN mode
-    //pinMode(SPI_CS, OUTPUT);
-    // set initial PIN state
-    //digitalWrite(SPI_CS, HIGH);
+    // Sensor.UpdateData();
+    if (millis() - timeSampling > 10)
+    {
+        mb.Hreg(0, val1); // Bắt đầu từ CH0 lưu vào Reg_1
+        mb.Hreg(1, val2); // Bắt đầu từ CH1 lưu vào Reg_2
+        mb.Hreg(2, val3); // Bắt đầu từ CH2 lưu vào Reg_3
+        mb.Hreg(3, val4); // Bắt đầu từ CH3 lưu vào Reg_4
+        timeSampling = millis();
+    }
+}
+void setup()0
+{
+#pragma region Declare_MPC3208
+    adc.begin(52, 51, 50, 3);
+#pragma endregion Declare_MPC3208
+
     // initialize serial
     Serial.begin(9600);
-    // initialize SPI interface for MCP3208
-    //SPISettings settings(ADC_CLK, MSBFIRST, SPI_MODE0);
-    //SPI.begin();
-    //SPI.beginTransaction(settings);
-
     // 16Input
-    for (int i = 0; i <= 16; i++)
+    for (int i = 0; i < 16; i++)
     {
         pinMode(input[i], INPUT_PULLUP);
     }
     // 16Output
-    for (int i = 0; i <= 16; i++)
+    for (int i = 0; i < 16; i++)
     {
         pinMode(output[i], OUTPUT);
     }
@@ -268,18 +280,22 @@ void loop()
 void loop()
 {
     //Đọc input & gán vào thanh ghi
-     for (int i = 0; i < 16; i++)
-     {
-         mb.Ists(i, digitalRead(input[i]));
-     }
-     // DO
-     for (int i = 0; i < 16; i++)
-     {
-         digitalWrite(output[i], mb.Coil(i));
-     }
-      mb.task();
-      //yield();
-      //Serial.println(SLAVE_ID);
-    //Serial.println(ModbusBaurate);
+    for (int i = 0; i < 16; i++)
+    {
+        mb.Ists(i, digitalRead(input[i]));
+    }
+    // DO
+    for (int i = 0; i < 16; i++)
+    {
+        digitalWrite(output[i], mb.Coil(i));
+    }
+    // ADC
+    updateSensor();
+    // for (int i = 0; i < 9; ++i)
+    {
+
+    }
+    mb.task();
+    yield();
 }
 //*/
