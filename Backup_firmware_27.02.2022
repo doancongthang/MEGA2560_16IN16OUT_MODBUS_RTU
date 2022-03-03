@@ -1,15 +1,15 @@
 #include <ModbusRTU.h>
 #include <Arduino.h>
-#include <MCP3208.h>
 #include <SPI.h>
+#include <Mcp3208.h>
 
 // Firmware FOR BOARD 16IN_16OUT
 // Using Uart2 for RS_485
 #define REGN 10
 
 // Cai dat cho ADC
-MCP3208 adc(3);
-// MCP3208 adc(ADC_VREF, SPI_CS);
+
+MCP3208 adc;
 
 //#define SLAVE_ID 1
 // Define for board 16IN_16OUT
@@ -58,6 +58,7 @@ void SetIDModbus()
     if (digitalRead(ID8) == HIGH)
         SLAVE_ID += 128;
 }
+
 int SetbaurateModbusRTU()
 {
     // bool BR1, BR2, BR3 = true, BR4, BR5, BR6;
@@ -105,36 +106,12 @@ int SetbaurateModbusRTU()
     }
     return ModbusBaurate;
 }
-void updateSensor()
-{
-    static unsigned long timeSampling = 0;
-    // int val1 = adc.analogRead(4);
 
-    // long val1=map(adc.analogRead(7), 0.0, 3189.00, 0.00, 20.00);
-    float val1 = adc.analogRead(7) * (20.0 / 3189.0);
-    float val2 = adc.analogRead(6) * (20.0 / 3189.0);
-    float val3 = adc.analogRead(5) * (20.0 / 3189.0);
-    float val4 = adc.analogRead(4) * (20.0 / 3189.0);
-
-    // Sensor.UpdateData();
-    if (millis() - timeSampling > 10)
-    {
-        // Serial.println((String)adc.analogRead(7)+"->"+(String)val1);
-
-        mb.Hreg(0, val1 * 100); // Bắt đầu từ CH0 lưu vào Reg_1
-        mb.Hreg(1, val2 * 100); // Bắt đầu từ CH1 lưu vào Reg_2
-        mb.Hreg(2, val3 * 100); // Bắt đầu từ CH2 lưu vào Reg_3
-        mb.Hreg(3, val4 * 100); // Bắt đầu từ CH3 lưu vào Reg_4
-        timeSampling = millis();
-    }
-}
 void setup()
 {
-#pragma region Declare_MPC3208
-    // adc.begin(52, 51, 50, 3);
-    adc.begin();
-
-#pragma endregion Declare_MPC3208
+    #pragma region Declare_MPC3208
+    adc.begin(52, 51, 50, 3);
+    #pragma endregion Declare_MPC3208
 
     // initialize serial
     Serial.begin(9600);
@@ -285,21 +262,24 @@ void loop()
 void loop()
 {
     //Đọc input & gán vào thanh ghi
-    for (int i = 0; i < 16; i++)
-    {
-        mb.Ists(i, digitalRead(input[i]));
-    }
-    // DO
-    for (int i = 0; i < 16; i++)
-    {
-        digitalWrite(output[i], mb.Coil(i));
-    }
-    // ADC
-    updateSensor();
-    // for (int i = 0; i < 9; ++i)
-    {
-    }
-    mb.task();
-    yield();
+     for (int i = 0; i < 16; i++)
+     {
+         mb.Ists(i, digitalRead(input[i]));
+     }
+     // DO
+     for (int i = 0; i < 16; i++)
+     {
+         digitalWrite(output[i], mb.Coil(i));
+     }
+     // ADC
+     //for (int i = 0; i < 9; ++i)
+     {
+         mb.Hreg(0, adc.readADC(0));  // Bắt đầu từ CH0 lưu vào Reg_1
+         mb.Hreg(1, adc.readADC(1));  // Bắt đầu từ CH1 lưu vào Reg_2
+         mb.Hreg(2, adc.readADC(2));  // Bắt đầu từ CH2 lưu vào Reg_3
+         mb.Hreg(3, adc.readADC(3));  // Bắt đầu từ CH3 lưu vào Reg_4
+     }
+     mb.task();
+     yield();
 }
 //*/
