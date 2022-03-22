@@ -108,8 +108,6 @@ int SetbaurateModbusRTU()
 void updateSensor()
 {
     static unsigned long timeSampling = 0;
-    // int val1 = adc.analogRead(4);
-
     // long val1=map(adc.analogRead(7), 0.0, 3189.00, 0.00, 20.00);
     float val1 = adc.analogRead(7) * (20.0 / 3189.0);
     float val2 = adc.analogRead(6) * (20.0 / 3189.0);
@@ -120,7 +118,6 @@ void updateSensor()
     if (millis() - timeSampling > 10)
     {
         // Serial.println((String)adc.analogRead(7)+"->"+(String)val1);
-
         mb.Hreg(0, val1 * 100); // Bắt đầu từ CH0 lưu vào Reg_1
         mb.Hreg(1, val2 * 100); // Bắt đầu từ CH1 lưu vào Reg_2
         mb.Hreg(2, val3 * 100); // Bắt đầu từ CH2 lưu vào Reg_3
