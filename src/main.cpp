@@ -108,6 +108,8 @@ int SetbaurateModbusRTU()
 void updateSensor()
 {
     static unsigned long timeSampling = 0;
+    // int val1 = adc.analogRead(4);
+
     // long val1=map(adc.analogRead(7), 0.0, 3189.00, 0.00, 20.00);
     float val1 = adc.analogRead(7) * (20.0 / 3189.0);
     float val2 = adc.analogRead(6) * (20.0 / 3189.0);
@@ -118,6 +120,7 @@ void updateSensor()
     if (millis() - timeSampling > 10)
     {
         // Serial.println((String)adc.analogRead(7)+"->"+(String)val1);
+
         mb.Hreg(0, val1 * 100); // Bắt đầu từ CH0 lưu vào Reg_1
         mb.Hreg(1, val2 * 100); // Bắt đầu từ CH1 lưu vào Reg_2
         mb.Hreg(2, val3 * 100); // Bắt đầu từ CH2 lưu vào Reg_3
@@ -125,12 +128,27 @@ void updateSensor()
         timeSampling = millis();
     }
 }
+void checkconnect()
+{
+    static unsigned long timesample = 0;
+    if (millis() - timesample > 10)
+    {
+        if (Serial2.available() > 0)
+        {
+        }
+        else
+        {
+            // while (1)
+            ;
+        }
+        timesample = millis();
+    }
+}
 void setup()
 {
 #pragma region Declare_MPC3208
     // adc.begin(52, 51, 50, 3);
     adc.begin();
-
 #pragma endregion Declare_MPC3208
 
     // initialize serial
@@ -169,11 +187,11 @@ void setup()
     mb.setBaudrate(ModbusBaurate);
     mb.slave(SLAVE_ID);
 
-    mb.addCoil(0, 0, 100); //  Thêm 100 Coils
-    mb.addHreg(0, 0, 100); //  Thêm thanh ghi hoding register với địa chỉ bắt đầu = 0 và độ dài thanh ghi =100
-    mb.addIsts(0, 0, 100); //  Thêm thanh ghi discrete với địa chỉ bắt đầu = 0, giá trị set ban đầu = false và độ dài thanh ghi = 100
-    mb.addIreg(0, 0, 10);  //  Thêm thanh ghi discrete với địa chỉ bắt đầu = 0, giá trị set ban đầu = false và độ dài thanh ghi = 100
-                           //   mb.Ireg(0,1992);      //  Dùng cho xác thực board từ PLC
+    mb.addCoil(0, 0, 16); //  Thêm 100 Coils
+    mb.addHreg(0, 0, 16); //  Thêm thanh ghi hoding register với địa chỉ bắt đầu = 0 và độ dài thanh ghi =100
+    mb.addIsts(0, 0, 16); //  Thêm thanh ghi discrete với địa chỉ bắt đầu = 0, giá trị set ban đầu = false và độ dài thanh ghi = 100
+    mb.addIreg(0, 0, 16); //  Thêm thanh ghi discrete với địa chỉ bắt đầu = 0, giá trị set ban đầu = false và độ dài thanh ghi = 100
+                          //  mb.Ireg(0,1992);      //  Dùng cho xác thực board từ PLC
 }
 /*----------------------------------------------------------------*/
 /*
@@ -270,9 +288,6 @@ void loop()
             digitalWrite(output[i], LOW);
             delay(10);
         }
-        readAdc();
-        mb.task();
-        yield();
     }
     mb.task();
     yield();
@@ -293,9 +308,10 @@ void loop()
     }
     // ADC
     updateSensor();
-    // for (int i = 0; i < 9; ++i)
-    {
-    }
+    //checkconnect();
+    //Serial.println(SLAVE_ID);
+    //Serial.println(ModbusBaurate);
+
     mb.task();
     yield();
 }

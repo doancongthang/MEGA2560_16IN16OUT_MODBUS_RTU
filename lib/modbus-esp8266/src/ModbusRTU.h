@@ -46,7 +46,7 @@ class ModbusRTUTemplate : public Modbus {
 		inline void master() {client();}
 		void server(uint8_t serverId) {_slaveId = serverId;};
 		inline void slave(uint8_t slaveId) {server(slaveId);}
-		
+
 		uint8_t slave() { return _slaveId; }
 		uint32_t eventSource() override {return _slaveId;}
 };
@@ -66,7 +66,7 @@ bool ModbusRTUTemplate::begin(T* port, int16_t txPin, bool direct) {
 		_direct = direct;
         pinMode(_txPin, OUTPUT);
         digitalWrite(_txPin, _direct?LOW:HIGH);
-    }
+	}
     return true;
 }
 
